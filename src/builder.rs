@@ -520,3 +520,22 @@ macro_rules! register_custom_mutations {
         $($builder.register_custom_mutation::<$ty>();)*
     };
 }
+
+
+#[macro_export]
+macro_rules! register_entity_parameterization {
+    ($builder:expr, $module_path:ident, $ignore_mutations:expr) => {
+        $builder.register_entity::<$module_path::Entity>(
+            <$module_path::RelatedEntity as sea_orm::Iterable>::iter()
+                .map(|rel| seaography::RelationBuilder::get_relation(&rel, $builder.context))
+                .collect(),
+        );
+        $builder =
+            $builder.register_entity_dataloader_one_to_one($module_path::Entity, tokio::spawn);
+        $builder =
+            $builder.register_entity_dataloader_one_to_many($module_path::Entity, tokio::spawn);
+        if $ignore_mutations {
+            $builder.register_entity_mutations::<$module_path::Entity, $module_path::ActiveModel>();
+        }
+    };
+}
