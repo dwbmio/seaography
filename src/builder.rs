@@ -491,18 +491,21 @@ macro_rules! register_entity_modules {
 }
 
 
+
 #[macro_export]
 macro_rules! register_entity_modules_read_only {
-    pub fn register_entity_modules(mut builder: seaography::builder::Builder) -> seaography::builder::Builder {
-        seaography::register_entity_parameterization!(
-            builder,
-            [
-                $($module_paths,)*
-            ], 
-            fasle
-        );
-        builder
-    }
+    ([$($module_paths:ident),+ $(,)?]) => {
+        pub fn register_entity_modules(mut builder: seaography::builder::Builder) -> seaography::builder::Builder {
+            seaography::register_entity_parameterization!(
+                builder,
+                [
+                    $($module_paths,)*
+                ], 
+                false
+            );
+            builder
+        }
+    };
 }
 
 #[macro_export]
