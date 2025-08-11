@@ -490,6 +490,21 @@ macro_rules! register_entity_modules {
     };
 }
 
+
+#[macro_export]
+macro_rules! register_entity_modules_read_only {
+    pub fn register_entity_modules(mut builder: seaography::builder::Builder) -> seaography::builder::Builder {
+        seaography::register_entity_parameterization!(
+            builder,
+            [
+                $($module_paths,)*
+            ], 
+            fasle
+        );
+        builder
+    }
+}
+
 #[macro_export]
 macro_rules! register_active_enums {
     ([$($enum_paths:path),+ $(,)?]) => {
