@@ -520,3 +520,40 @@ macro_rules! register_custom_mutations {
         $($builder.register_custom_mutation::<$ty>();)*
     };
 }
+
+#[macro_export]
+macro_rules! register_entity_read_only {
+    ($builder:expr, $module_path:ident) => {
+        $builder.register_entity::<$module_path::Entity>(
+            <$module_path::RelatedEntity as sea_orm::Iterable>::iter()
+                .map(|rel| seaography::RelationBuilder::get_relation(&rel, $builder.context))
+                .collect(),
+        );
+        $builder =
+            $builder.register_entity_dataloader_one_to_one($module_path::Entity, tokio::spawn);
+        $builder =
+            $builder.register_entity_dataloader_one_to_many($module_path::Entity, tokio::spawn);
+    };
+}
+
+#[macro_export]
+macro_rules! register_entities_read_only {
+    ($builder:expr, [$($module_paths:ident),+ $(,)?]) => {
+        $(seaography::register_entity_read_only!($builder, $module_paths);)*
+    };
+}
+
+#[macro_export]
+macro_rules! register_entity_modules_read_only {
+    ([$($module_paths:ident),+ $(,)?]) => {
+        pub fn register_entity_modules(mut builder: seaography::builder::Builder) -> seaography::builder::Builder {
+            seaography::register_entities_read_only!(
+                builder,
+                [
+                    $($module_paths,)*
+                ]
+            );
+            builder
+        }
+    };
+}
