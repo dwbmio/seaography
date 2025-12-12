@@ -797,9 +797,22 @@ fn extract_array_input(ty: &str, value: sea_orm::Value) -> sea_orm::sea_query::S
         TypeRef::STRING => <Vec<String> as sea_orm::sea_query::ValueType>::try_from(value)
             .unwrap()
             .into(),
-        TypeRef::INT => <Vec<i32> as sea_orm::sea_query::ValueType>::try_from(value)
-            .unwrap()
-            .into(),
+        TypeRef::INT => {
+            // 1. 首先尝试转换为 Vec<i64> (对应 BigInt 数组)
+            if let Ok(vec_i64) =
+                <Vec<i64> as sea_orm::sea_query::ValueType>::try_from(value.clone())
+            {
+                println!("Extracted as Vec<i64>");
+                return vec_i64.into();
+            }
+
+            // 2. 如果失败，尝试转换为 Vec<i32> (对应 Int 数组)
+            if let Ok(vec_i32) = <Vec<i32> as sea_orm::sea_query::ValueType>::try_from(value) {
+                println!("Extracted as Vec<i32>");
+                return vec_i32.into();
+            }
+            panic!("Unsupported array type for TypeRef::INT");
+        }
         TypeRef::FLOAT => <Vec<f64> as sea_orm::sea_query::ValueType>::try_from(value)
             .unwrap()
             .into(),

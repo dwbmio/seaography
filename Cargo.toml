@@ -3,7 +3,7 @@ members = [".", "cli", "generator", "macros"]
 
 [package]
 name = "seaography"
-version = "1.1.4"
+version = "1.1.4-rc.1"
 edition = "2021"
 rust-version = "1.70"
 authors = ["Panagiotis Karatakis <panagiotiskaratakis@gmail.com>"]
