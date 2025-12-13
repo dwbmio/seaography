@@ -154,6 +154,8 @@ impl std::default::Default for FilterTypesMapConfig {
                 type_name: "StringArrayFilterInput".into(),
                 base_type: TypeRef::STRING.into(),
                 supported_operations: BTreeSet::from([
+                    FilterOperation::ArrayStringEquals,
+                    FilterOperation::ArrayStringNotEquals,
                     FilterOperation::ArrayContains,
                     FilterOperation::ArrayContained,
                     FilterOperation::ArrayOverlap,
@@ -163,6 +165,8 @@ impl std::default::Default for FilterTypesMapConfig {
                 type_name: "TextArrayFilterInput".into(),
                 base_type: TypeRef::STRING.into(),
                 supported_operations: BTreeSet::from([
+                    FilterOperation::ArrayStringEquals,
+                    FilterOperation::ArrayStringNotEquals,
                     FilterOperation::ArrayContains,
                     FilterOperation::ArrayContained,
                     FilterOperation::ArrayOverlap,
@@ -172,6 +176,8 @@ impl std::default::Default for FilterTypesMapConfig {
                 type_name: "IntegerArrayFilterInput".into(),
                 base_type: TypeRef::INT.into(),
                 supported_operations: BTreeSet::from([
+                    FilterOperation::ArrayIntegerEquals,
+                    FilterOperation::ArrayIntegerNotEquals,
                     FilterOperation::ArrayContains,
                     FilterOperation::ArrayContained,
                     FilterOperation::ArrayOverlap,
@@ -190,6 +196,8 @@ impl std::default::Default for FilterTypesMapConfig {
                 type_name: "BooleanArrayFilterInput".into(),
                 base_type: TypeRef::BOOLEAN.into(),
                 supported_operations: BTreeSet::from([
+                    FilterOperation::ArrayBooleanEquals,
+                    FilterOperation::ArrayBooleanNotEquals,
                     FilterOperation::ArrayContains,
                     FilterOperation::ArrayContained,
                     FilterOperation::ArrayOverlap,
@@ -476,6 +484,16 @@ impl FilterTypesMapHelper {
                         "array_overlap",
                         TypeRef::named_nn_list(filter_info.base_type.clone()),
                     ),
+                    FilterOperation::ArrayStringEquals
+                    | FilterOperation::ArrayBooleanEquals
+                    | FilterOperation::ArrayIntegerEquals => {
+                        InputValue::new("eq", TypeRef::named_nn_list(filter_info.base_type.clone()))
+                    }
+                    FilterOperation::ArrayIntegerNotEquals
+                    | FilterOperation::ArrayBooleanNotEquals
+                    | FilterOperation::ArrayStringNotEquals => {
+                        InputValue::new("ne", TypeRef::named_nn_list(filter_info.base_type.clone()))
+                    }
                 };
                 object.field(field)
             },
@@ -740,6 +758,24 @@ impl FilterTypesMapHelper {
                         condition = condition.add(col.binary(PgBinOper::Overlap, vec));
                     }
                 }
+                FilterOperation::ArrayBooleanEquals
+                | FilterOperation::ArrayStringEquals
+                | FilterOperation::ArrayIntegerEquals => {
+                    if let Some(value) = filter.get("eq") {
+                        let value = types_map_helper
+                            .async_graphql_value_to_sea_orm_value::<T>(column, &value)?;
+                        condition = condition.add(column.eq(value));
+                    }
+                }
+                FilterOperation::ArrayBooleanNotEquals
+                | FilterOperation::ArrayStringNotEquals
+                | FilterOperation::ArrayIntegerNotEquals => {
+                    if let Some(value) = filter.get("ne") {
+                        let value = types_map_helper
+                            .async_graphql_value_to_sea_orm_value::<T>(column, &value)?;
+                        condition = condition.add(column.eq(value));
+                    }
+                }
             }
         }
 
@@ -786,6 +822,12 @@ pub enum FilterOperation {
     NotLike,
     Between,
     NotBetween,
+    ArrayStringEquals,
+    ArrayStringNotEquals,
+    ArrayBooleanEquals,
+    ArrayBooleanNotEquals,
+    ArrayIntegerEquals,
+    ArrayIntegerNotEquals,
     ArrayContains,
     ArrayContained,
     ArrayOverlap,
